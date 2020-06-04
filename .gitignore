@@ -1,0 +1,14 @@
+.*.swp
+*.o
+config.log
+config.status
+Makefile.in
+Makefile
+src/config.h.in
+src/config.h
+src/stamp-h1
+/compile
+/configure
+/aclocal.m4
+/autom4te.cache/
+**/.deps/

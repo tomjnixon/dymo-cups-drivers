@@ -12,3 +12,6 @@ src/stamp-h1
 /aclocal.m4
 /autom4te.cache/
 **/.deps/
+
+src/lm/raster2dymolm
+src/lw/raster2dymolw

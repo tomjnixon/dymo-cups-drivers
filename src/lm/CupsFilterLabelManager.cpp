@@ -198,6 +198,10 @@ CDriverInitializerLabelManager::ProcessPPDOptions(CLabelManagerDriver& Driver, C
      Driver.SetAlignedLeader(72);
      Driver.SetMinPageLines(222);
      Driver.SetSupportAutoCut(true);
+
+     Driver.SetNewMode(true);
+     Driver.SetHeadCutterDistance(89);
+     Driver.SetMargin(10);
   }
 }
 

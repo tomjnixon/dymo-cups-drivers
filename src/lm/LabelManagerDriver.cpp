@@ -37,6 +37,7 @@ CLabelManagerDriver::CLabelManagerDriver(IPrintEnvironment& Environment):
   CutOptions_(CLabelManagerDriver::coCut), Alignment_(alCenter), ContinuousPaper_(false), PrintChainMarksAtDocEnd_(false), AutoPaper_(false), TapeAlignmentOffset_(0), TapeColor_(tcBlackOnWhite),
   DeviceName_(), SupportAutoCut_(true), TSDevice_(false), MaxPrintableWidth_(96), 
   NormalLeader_(75), MinLeader_(55), AlignedLeader_(43), MinPageLines_(133),
+  NewMode_(false), HeadCutterDistance_(0), Margin_(0),
   LastDotTab_(size_t(-1)), LastBytesPerLine_(size_t(-1)), EmptyLinesCount_(0), PageNo_(1),
   RasterLines_(), ShiftedRasterLine_(12), TSBuffer_(0),
   HLockFile_(0)
@@ -60,13 +61,17 @@ CLabelManagerDriver::StartDoc()
 void 
 CLabelManagerDriver::EndDoc()
 {
-  if (PrintChainMarksAtDocEnd_)
-    SendChainMark();
+  if (NewMode_) {
+    EndPageInternal(true);
+  } else {
+    if (PrintChainMarksAtDocEnd_)
+      SendChainMark();
 
-  SendSkipLines(MinLeader_); // advance to the cutter
+    SendSkipLines(MinLeader_); // advance to the cutter
 
-  if (SupportAutoCut_ && !PrintChainMarksAtDocEnd_)
-    SendCut();
+    if (SupportAutoCut_ && !PrintChainMarksAtDocEnd_)
+      SendCut();
+  }
 
   if(IsTSDevice())
   {
@@ -85,6 +90,12 @@ CLabelManagerDriver::StartPage()
     
   RasterLines_.clear();
     
+  if (NewMode_) {
+    if (PageNo_ > 1)
+      EndPageInternal(false);
+    return;
+  }
+
   size_t LeaderLength = NormalLeader_;
   if (PageNo_ > 1)
   {
@@ -107,6 +118,11 @@ CLabelManagerDriver::StartPage()
 void 
 CLabelManagerDriver::EndPage()
 {
+  ++PageNo_;
+
+  if (NewMode_)
+    return;
+
   // last empty lines will not be drawn in case of Auto paper
   // so, adjust the page length to properly calculate min page length
   if (AutoPaper_)
@@ -143,10 +159,39 @@ CLabelManagerDriver::EndPage()
     
     SendSkipLines(TrailerLength);
   }
-    
-  ++PageNo_;
 }
 
+void
+CLabelManagerDriver::EndPageInternal(bool last) {
+  // process cached data
+  if (Alignment_ == alLeft)
+    SendCachedRasterLines();
+
+  // send remaining empty lines
+  size_t SkipLength = EmptyLinesCount_;
+  EmptyLinesCount_ = 0;
+
+  // add the space at the end of the label
+  if (Alignment_ == alCenter)
+    // add space matching the start
+    SkipLength += HeadCutterDistance_;
+  else
+    // add margin so we don't cut the end off
+    SkipLength += Margin_;
+
+  // either move to the cutter and cut, or print chain mark and move that to
+  // the cutter position
+  if ((CutOptions_ == coCut) && SupportAutoCut_) {
+    SkipLength += HeadCutterDistance_;
+    SendSkipLines(SkipLength);
+    SendCut();
+  } else {
+    SendSkipLines(SkipLength);
+    if (!last || PrintChainMarksAtDocEnd_)
+      SendChainMark();
+    SendSkipLines(HeadCutterDistance_);
+  }
+}
 
 void 
 CLabelManagerDriver::GetBlanks(
@@ -362,6 +407,24 @@ void
 CLabelManagerDriver::SetTSDevice(bool Value)
 {
   TSDevice_ = Value;
+}
+
+void
+CLabelManagerDriver::SetNewMode(bool Value)
+{
+  NewMode_ = Value;
+}
+
+void
+CLabelManagerDriver::SetHeadCutterDistance(size_t Value)
+{
+  HeadCutterDistance_ = Value;
+}
+
+void
+CLabelManagerDriver::SetMargin(size_t Value)
+{
+  Margin_ = Value;
 }
     
 size_t 

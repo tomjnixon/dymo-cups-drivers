@@ -102,6 +102,9 @@ public:
   void SetMinLeader(size_t Value);
   void SetAlignedLeader(size_t Value);
   void SetMinPageLines(size_t Value);
+  void SetNewMode(bool Value);
+  void SetHeadCutterDistance(size_t Value);
+  void SetMargin(size_t Value);
 
   const std::string&  GetDeviceName();
   bool                IsSupportAutoCut();
@@ -136,6 +139,8 @@ protected:
   void SendTapeColor(tape_color_t Value);
     
   void GetBlanks(const buffer_t& Buf, size_t& LeaderBlanks, size_t& TrailerBlanks);
+
+  void EndPageInternal(bool is_last);
     
   size_t GetMaxBytesPerLine();
 private:
@@ -159,6 +164,10 @@ private:
   size_t          MinLeader_;
   size_t          AlignedLeader_;
   size_t          MinPageLines_;
+
+  bool            NewMode_;
+  size_t          HeadCutterDistance_;
+  size_t          Margin_;
     
   // job internal variables
   size_t          LastDotTab_;
